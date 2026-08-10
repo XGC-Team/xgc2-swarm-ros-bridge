@@ -93,6 +93,8 @@ ownership:
   - /opt/ros/noetic/lib/swarm_ros_bridge/tests/swarm_ros_bridge_v2_ros1_codec_test
 release:
   workflow: release.yml
+  dependency_policy:
+    xgc2-scout-msgs: rebuild
   apt_versions:
     bionic: 1.1.0-9
     focal: 1.1.0-9
