@@ -14,7 +14,8 @@ defaults:
     shell: bash
 
 jobs:
-  build-debs:
+  noetic-catkin:
+    name: Noetic catkin (${{ matrix.arch }})
     strategy:
       fail-fast: false
       matrix:
@@ -27,10 +28,40 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Build ROS Noetic/Focal source contract
+        run: .xgc2/scripts/check_noetic_catkin_in_docker.sh
+
+  build-debs:
+    name: ${{ matrix.ros_distro }} deb (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ros_distro: melodic
+            distribution: bionic
+            arch: amd64
+            runner: ubuntu-latest
+          - ros_distro: melodic
+            distribution: bionic
+            arch: arm64
+            runner: ubuntu-24.04-arm
+          - ros_distro: noetic
+            distribution: focal
+            arch: amd64
+            runner: ubuntu-latest
+          - ros_distro: noetic
+            distribution: focal
+            arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Build and install-check deb package
         run: |
           .xgc2/scripts/build_debs_in_docker.sh \
-            --work-dir "$RUNNER_TEMP/xgc2-swarm-ros-bridge-${{ matrix.arch }}" \
+            --ros-distro "${{ matrix.ros_distro }}" \
+            --work-dir "$RUNNER_TEMP/xgc2-swarm-ros-bridge-${{ matrix.ros_distro }}-${{ matrix.arch }}" \
             --output-dir "$GITHUB_WORKSPACE/debs"
 
       - name: Create trusted build manifest
@@ -41,7 +72,7 @@ jobs:
             --output-dir .ci/build-manifests \
             --product xgc2-swarm-ros-bridge \
             --product-version "$product_version" \
-            --distribution bionic \
+            --distribution "${{ matrix.distribution }}" \
             --architecture "${{ matrix.arch }}" \
             --source-sha "$GITHUB_SHA" \
             --ci-run-id "$GITHUB_RUN_ID" \
@@ -51,7 +82,7 @@ jobs:
       - name: Upload deb artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: xgc2-swarm-ros-bridge-debs-${{ matrix.arch }}
+          name: xgc2-swarm-ros-bridge-debs-${{ matrix.ros_distro }}-${{ matrix.arch }}
           path: |
             debs/*.deb
             .ci/build-manifests/*.json

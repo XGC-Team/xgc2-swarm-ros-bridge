@@ -4,11 +4,16 @@
 
 ## XGC2 Product
 
-This repository is productized as the generic ROS Melodic package:
+This repository builds distro-specific generic ROS1 packages for Melodic/Bionic
+and Noetic/Focal:
 
 ```bash
 sudo apt install ros-melodic-swarm-ros-bridge
+sudo apt install ros-noetic-swarm-ros-bridge
 ```
+
+These commands require the corresponding package to have been published to a
+configured APT repository; a local build does not publish either artifact.
 
 The binary package installs the upstream ROS package name
 `swarm_ros_bridge`. Robot-specific peer/topic configuration should be supplied
@@ -17,6 +22,32 @@ by the consuming robot product. The compiled generic message set is:
 - `sensor_msgs/Imu`
 - `geometry_msgs/Twist`
 - `std_msgs/String`
+
+An additive, ROS-free v2 protocol/safety core is under development alongside
+the unchanged legacy bridge. Its frozen envelope, closed ground/vehicle role
+capabilities, per-channel bounded ACK window, identity/freshness rules,
+zero-only STOP contract, and explicit non-claims are documented in
+[`docs/protocol-v2.md`](docs/protocol-v2.md). It is not yet wired to sockets,
+ROS topics, or robot drivers. Product packages include the additive
+`libswarm_ros_bridge_protocol_v2.so`, the separate
+`libswarm_ros_bridge_ros1_codec_v2.so`, their public headers, and the protocol
+contract and deterministic installed tests while preserving the legacy
+executable and wire format. The typed
+slice only admits `sensor_msgs/Imu`, `nav_msgs/Odometry`, and
+`scout_msgs/ScoutStatus` telemetry. It can construct only a bit-exact
+positive-zero `geometry_msgs/Twist` from an admitted ZERO_STOP; there is no
+nonzero generic Twist API. Package and installed-consumer gates cover ROS
+Noetic and Melodic without sockets, a ROS master, or drivers. CI freezes native
+amd64 and arm64 package jobs for both distributions; a local amd64 result is
+not evidence of an arm64 build.
+
+At this handoff, native arm64 execution evidence, signed APT repository
+publication, and v2 runtime/physical integration evidence are not included.
+The CI matrix is a required future gate, not proof that those jobs have run.
+Runtime closure must separately cover the authenticated network peer, ROS
+adapter/master interaction, driver binding, and physical zero-hold feedback;
+none of those are exercised by the source, package, or installed-consumer
+checks in this repository.
 
 Additional ROS message types require a robot/profile-specific rebuild because
 the current implementation registers message headers at compile time.

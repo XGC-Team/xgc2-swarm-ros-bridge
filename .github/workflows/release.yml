@@ -30,12 +30,12 @@ on:
         default: ""
         type: string
       run_cpp_quality:
-        description: Run C++ quality checks
+        description: Legacy compatibility input; v2 C++ quality always runs
         required: true
         default: false
         type: boolean
       run_source_tests:
-        description: Run source tests
+        description: Legacy compatibility input; v2 source tests always run
         required: true
         default: false
         type: boolean
@@ -98,7 +98,8 @@ jobs:
           test "${version}" = "${{ inputs.expected_version }}"
           test "$(git rev-parse HEAD)" = "${{ inputs.expected_source_sha }}"
 
-  build-debs:
+  noetic-catkin:
+    name: Noetic catkin (${{ matrix.arch }})
     needs: validate-release-inputs
     strategy:
       fail-fast: false
@@ -112,13 +113,45 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Build ROS Noetic/Focal source contract
+        run: .xgc2/scripts/check_noetic_catkin_in_docker.sh
+
+  build-debs:
+    name: ${{ matrix.ros_distro }} deb (${{ matrix.arch }})
+    needs:
+      - validate-release-inputs
+      - noetic-catkin
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ros_distro: melodic
+            distribution: bionic
+            arch: amd64
+            runner: ubuntu-latest
+          - ros_distro: melodic
+            distribution: bionic
+            arch: arm64
+            runner: ubuntu-24.04-arm
+          - ros_distro: noetic
+            distribution: focal
+            arch: amd64
+            runner: ubuntu-latest
+          - ros_distro: noetic
+            distribution: focal
+            arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Build and install-check deb package
         run: |
-          if [[ "${{ inputs.run_cpp_quality }}" == "true" || "${{ inputs.run_source_tests }}" == "true" ]]; then
-            echo "No standalone quality/source test switch is currently exposed; running package build and install checks." >&2
-          fi
+          # The shared package builder always runs the v2 ROS-free core gate.
+          # The legacy switches remain accepted for release-train compatibility.
           .xgc2/scripts/build_debs_in_docker.sh \
-            --work-dir "$RUNNER_TEMP/xgc2-swarm-ros-bridge-release-${{ matrix.arch }}" \
+            --ros-distro "${{ matrix.ros_distro }}" \
+            --work-dir "$RUNNER_TEMP/xgc2-swarm-ros-bridge-release-${{ matrix.ros_distro }}-${{ matrix.arch }}" \
             --output-dir "$GITHUB_WORKSPACE/debs"
 
       - name: Create release-train build manifest
@@ -128,7 +161,7 @@ jobs:
             --output-dir .ci/build-manifests \
             --product xgc2-swarm-ros-bridge \
             --product-version "${{ inputs.expected_version }}" \
-            --distribution bionic \
+            --distribution "${{ matrix.distribution }}" \
             --architecture "${{ matrix.arch }}" \
             --source-sha "${{ inputs.expected_source_sha }}" \
             --ci-run-id "$GITHUB_RUN_ID" \
@@ -139,7 +172,7 @@ jobs:
         if: ${{ inputs.prepare_action == 'release' }}
         uses: actions/upload-artifact@v4
         with:
-          name: xgc2-swarm-ros-bridge-debs-${{ matrix.arch }}
+          name: xgc2-swarm-ros-bridge-debs-${{ matrix.ros_distro }}-${{ matrix.arch }}
           path: |
             debs/*.deb
             .ci/build-manifests/*.json
