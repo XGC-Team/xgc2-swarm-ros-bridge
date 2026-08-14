@@ -30,12 +30,12 @@ on:
         default: ""
         type: string
       run_cpp_quality:
-        description: Legacy compatibility input; v2 C++ quality always runs
+        description: Unused; kept for release-train input compatibility
         required: true
         default: false
         type: boolean
       run_source_tests:
-        description: Legacy compatibility input; v2 source tests always run
+        description: Unused; kept for release-train input compatibility
         required: true
         default: false
         type: boolean
@@ -151,8 +151,6 @@ jobs:
 
       - name: Build and install-check deb package
         run: |
-          # The shared package builder always runs the v2 ROS-free core gate.
-          # The legacy switches remain accepted for release-train compatibility.
           .xgc2/scripts/build_debs_in_docker.sh \
             --ros-distro "${{ matrix.ros_distro }}" \
             --image "${{ matrix.image }}" \

@@ -43,14 +43,8 @@ if [[ -z "${DOCKER_IMAGE}" ]]; then
 fi
 
 mkdir -p "${WORK_DIR}" "${OUTPUT_DIR}"
-DEPS_DIR="${WORK_DIR}/xgc2-product-debs"
-mkdir -p "${DEPS_DIR}"
 
 docker pull "${DOCKER_IMAGE}"
-IMAGE_ARCH="$(docker run --rm "${DOCKER_IMAGE}" bash -lc 'dpkg --print-architecture')"
-ROS_DISTRO="${ROS_DISTRO}" XGC2_DEB_ARCH="${IMAGE_ARCH}" \
-  "${SCRIPT_DIR}/fetch_scout_msgs.sh" "${DEPS_DIR}"
-
 docker run --rm --network none \
   -e XGC2_BUILD_GID="$(id -g)" \
   -e XGC2_BUILD_UID="$(id -u)" \
@@ -60,7 +54,6 @@ docker run --rm --network none \
   -v "${REPO_ROOT}:/workspace/repo:ro" \
   -v "${WORK_DIR}:/workspace/work" \
   -v "${OUTPUT_DIR}:/workspace/out" \
-  -v "${DEPS_DIR}:/workspace/deps:ro" \
   "${DOCKER_IMAGE}" \
   bash -lc '
     set -euo pipefail
@@ -71,7 +64,6 @@ docker run --rm --network none \
     : "${ROS_DISTRO:?}"
     for pkg in \
       "ros-${ROS_DISTRO}-geometry-msgs" \
-      "ros-${ROS_DISTRO}-nav-msgs" \
       "ros-${ROS_DISTRO}-roscpp" \
       "ros-${ROS_DISTRO}-sensor-msgs" \
       "ros-${ROS_DISTRO}-std-msgs" \
@@ -83,35 +75,17 @@ docker run --rm --network none \
       fi
     done
 
-    shopt -s nullglob
-    deps=(/workspace/deps/*.deb)
-    shopt -u nullglob
-    if [[ "${#deps[@]}" -eq 0 ]]; then
-      echo "no scout_msgs deb mounted" >&2
-      exit 1
-    fi
-    dpkg -i "${deps[@]}"
-
     rm -rf /workspace/work/src /workspace/work/build /workspace/work/devel /workspace/work/install-root
     mkdir -p /workspace/work/src/swarm_ros_bridge
     rsync -a --delete \
       --exclude .git --exclude .work --exclude debs \
       /workspace/repo/ /workspace/work/src/swarm_ros_bridge/
 
-    /workspace/work/src/swarm_ros_bridge/test/run_v2_core_tests.sh
-
     cd /workspace/work
     set +u
     source "${ros_prefix}/setup.bash"
     set -u
     parallel_jobs="$(nproc)"
-    catkin_make -j"${parallel_jobs}" -l"${parallel_jobs}" \
-      swarm_ros_bridge_v2_ros1_codec_test \
-      -DCATKIN_ENABLE_TESTING=ON \
-      -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_CXX_FLAGS_RELEASE="-O3 -DNDEBUG" \
-      -DCMAKE_C_FLAGS_RELEASE="-O3 -DNDEBUG"
-    /workspace/work/devel/lib/swarm_ros_bridge/swarm_ros_bridge_v2_ros1_codec_test
     DESTDIR=/workspace/work/install-root catkin_make -j"${parallel_jobs}" -l"${parallel_jobs}" install \
       -DCMAKE_INSTALL_PREFIX="${ros_prefix}" \
       -DCMAKE_BUILD_TYPE=Release \
@@ -136,17 +110,13 @@ docker run --rm --network none \
     mkdir -p "${deb_root}"
     dpkg-deb -x "${package_debs[0]}" "${deb_root}"
     required_deb_files=(
-      "${ros_prefix}/lib/libswarm_ros_bridge_protocol_v2.so"
-      "${ros_prefix}/lib/libswarm_ros_bridge_ros1_codec_v2.so"
-      "${ros_prefix}/include/swarm_ros_bridge/v2/protocol.hpp"
-      "${ros_prefix}/include/swarm_ros_bridge/v2/ros1_codec.hpp"
-      "${ros_prefix}/share/swarm_ros_bridge/docs/protocol-v2.md"
-      "${ros_prefix}/lib/swarm_ros_bridge/tests/swarm_ros_bridge_v2_protocol_test"
-      "${ros_prefix}/lib/swarm_ros_bridge/tests/swarm_ros_bridge_v2_ros1_codec_test"
+      "${ros_prefix}/lib/swarm_ros_bridge/bridge_node"
+      "${ros_prefix}/share/swarm_ros_bridge/package.xml"
+      "${ros_prefix}/share/swarm_ros_bridge/launch/test.launch"
     )
     for required_file in "${required_deb_files[@]}"; do
       if [[ ! -f "${deb_root}${required_file}" ]]; then
-        echo "deb is missing required v2 file: ${required_file}" >&2
+        echo "deb is missing required file: ${required_file}" >&2
         exit 1
       fi
     done

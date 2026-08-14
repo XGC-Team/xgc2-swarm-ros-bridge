@@ -4,7 +4,6 @@ set -euo pipefail
 INSTALL_ROOT=""
 OUTPUT_DIR=""
 ROS_DISTRO="${ROS_DISTRO:-melodic}"
-SCOUT_MSGS_VERSION="0.3.3-10"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 PACKAGE="ros-${ROS_DISTRO}-swarm-ros-bridge"
@@ -80,9 +79,6 @@ copy_path() {
 
 copy_path "${PREFIX_ROOT}/share/${ROS_PACKAGE}"
 copy_path "${PREFIX_ROOT}/lib/${ROS_PACKAGE}"
-copy_path "${PREFIX_ROOT}/lib/lib${ROS_PACKAGE}_protocol_v2.so"
-copy_path "${PREFIX_ROOT}/lib/lib${ROS_PACKAGE}_ros1_codec_v2.so"
-copy_path "${PREFIX_ROOT}/include/${ROS_PACKAGE}"
 
 if [[ ! -f "${PKG_ROOT}${PREFIX}/share/${ROS_PACKAGE}/package.xml" ]]; then
   echo "missing installed package.xml for ${ROS_PACKAGE}" >&2
@@ -93,22 +89,6 @@ if [[ ! -x "${PKG_ROOT}${PREFIX}/lib/${ROS_PACKAGE}/bridge_node" ]]; then
   exit 1
 fi
 
-required_v2_files=(
-  "${PREFIX}/lib/lib${ROS_PACKAGE}_protocol_v2.so"
-  "${PREFIX}/lib/lib${ROS_PACKAGE}_ros1_codec_v2.so"
-  "${PREFIX}/include/${ROS_PACKAGE}/v2/protocol.hpp"
-  "${PREFIX}/include/${ROS_PACKAGE}/v2/ros1_codec.hpp"
-  "${PREFIX}/share/${ROS_PACKAGE}/docs/protocol-v2.md"
-  "${PREFIX}/lib/${ROS_PACKAGE}/tests/swarm_ros_bridge_v2_protocol_test"
-  "${PREFIX}/lib/${ROS_PACKAGE}/tests/swarm_ros_bridge_v2_ros1_codec_test"
-)
-for required_file in "${required_v2_files[@]}"; do
-  if [[ ! -f "${PKG_ROOT}${required_file}" ]]; then
-    echo "missing required packaged v2 file: ${required_file}" >&2
-    exit 1
-  fi
-done
-
 cat > "${PKG_ROOT}/DEBIAN/control" <<EOF
 Package: ${PACKAGE}
 Version: ${VERSION}
@@ -116,7 +96,7 @@ Section: misc
 Priority: optional
 Architecture: ${ARCH}
 Maintainer: XGC2 <apt@example.com>
-Depends: libzmqpp-dev, ros-${ROS_DISTRO}-geometry-msgs, ros-${ROS_DISTRO}-nav-msgs, ros-${ROS_DISTRO}-roscpp, ros-${ROS_DISTRO}-scout-msgs (= ${SCOUT_MSGS_VERSION}), ros-${ROS_DISTRO}-sensor-msgs, ros-${ROS_DISTRO}-std-msgs
+Depends: libzmqpp-dev, ros-${ROS_DISTRO}-geometry-msgs, ros-${ROS_DISTRO}-roscpp, ros-${ROS_DISTRO}-sensor-msgs, ros-${ROS_DISTRO}-std-msgs
 Description: ZeroMQ ROS1 bridge for swarm robot topics
  ROS ${ROS_DISTRO} swarm_ros_bridge package for forwarding configured ROS
  topics between robots over ZeroMQ.
@@ -131,27 +111,10 @@ ROS package:
 Version:
   ${VERSION}
 
-Legacy bridge compiled message types:
+Compiled message types:
   sensor_msgs/Imu
   geometry_msgs/Twist
   std_msgs/String
-
-Additive draft protocol core:
-  ${PREFIX}/lib/lib${ROS_PACKAGE}_protocol_v2.so
-  ${PREFIX}/include/${ROS_PACKAGE}/v2/protocol.hpp
-  ${PREFIX}/share/${ROS_PACKAGE}/docs/protocol-v2.md
-
-Additive typed ROS1 codec:
-  ${PREFIX}/lib/lib${ROS_PACKAGE}_ros1_codec_v2.so
-  ${PREFIX}/include/${ROS_PACKAGE}/v2/ros1_codec.hpp
-
-Installed deterministic tests:
-  ${PREFIX}/lib/${ROS_PACKAGE}/tests/swarm_ros_bridge_v2_protocol_test
-  ${PREFIX}/lib/${ROS_PACKAGE}/tests/swarm_ros_bridge_v2_ros1_codec_test
-
-The v2 protocol core remains ROS-free. The separate typed codec is a closed
-telemetry/positive-zero conversion layer and does not claim a network peer,
-ROS runtime adapter, driver, or physical robot closure.
 EOF
 
 find "${PKG_ROOT}" -type d -exec chmod 0755 {} +
