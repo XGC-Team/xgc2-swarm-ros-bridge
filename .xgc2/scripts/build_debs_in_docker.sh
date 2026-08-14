@@ -7,37 +7,18 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 ROS_DISTRO="${ROS_DISTRO:-melodic}"
 DOCKER_IMAGE="${DOCKER_IMAGE:-}"
-DOCKER_NETWORK="${DOCKER_NETWORK:-}"
 WORK_DIR="${WORK_DIR:-${REPO_ROOT}/.work/docker}"
 OUTPUT_DIR="${OUTPUT_DIR:-${REPO_ROOT}/debs}"
 INSTALL_CHECK="${INSTALL_CHECK:-true}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --ros-distro)
-      ROS_DISTRO="$2"
-      shift 2
-      ;;
-    --image)
-      DOCKER_IMAGE="$2"
-      shift 2
-      ;;
-    --network)
-      DOCKER_NETWORK="$2"
-      shift 2
-      ;;
-    --work-dir)
-      WORK_DIR="$2"
-      shift 2
-      ;;
-    --output-dir)
-      OUTPUT_DIR="$2"
-      shift 2
-      ;;
-    --skip-install-check)
-      INSTALL_CHECK=false
-      shift
-      ;;
+    --ros-distro) ROS_DISTRO="$2"; shift 2 ;;
+    --image) DOCKER_IMAGE="$2"; shift 2 ;;
+    --work-dir) WORK_DIR="$2"; shift 2 ;;
+    --output-dir) OUTPUT_DIR="$2"; shift 2 ;;
+    --skip-install-check) INSTALL_CHECK=false; shift ;;
+    --network) shift 2 ;; # ignored; container stays offline
     *)
       echo "unknown argument: $1" >&2
       exit 1
@@ -47,10 +28,10 @@ done
 
 case "${ROS_DISTRO}" in
   melodic)
-    DEFAULT_DOCKER_IMAGE="ros:melodic-ros-base-bionic"
+    DEFAULT_DOCKER_IMAGE="ghcr.io/xgc-team/xgc2-images/xgc2-build-bionic-ros-melodic:1.0.0"
     ;;
   noetic)
-    DEFAULT_DOCKER_IMAGE="ros:noetic-ros-base-focal"
+    DEFAULT_DOCKER_IMAGE="ghcr.io/xgc-team/xgc2-images/xgc2-build-focal-ros-noetic:1.0.0"
     ;;
   *)
     echo "unsupported ROS distro: ${ROS_DISTRO}" >&2
@@ -62,24 +43,24 @@ if [[ -z "${DOCKER_IMAGE}" ]]; then
 fi
 
 mkdir -p "${WORK_DIR}" "${OUTPUT_DIR}"
-
-docker_network_args=()
-if [[ -n "${DOCKER_NETWORK}" ]]; then
-  docker_network_args=(--network "${DOCKER_NETWORK}")
-fi
+DEPS_DIR="${WORK_DIR}/xgc2-product-debs"
+mkdir -p "${DEPS_DIR}"
 
 docker pull "${DOCKER_IMAGE}"
-docker run --rm \
-  -e XGC2_APT_OVERLAY_URL="${XGC2_APT_OVERLAY_URL:-}" \
+IMAGE_ARCH="$(docker run --rm "${DOCKER_IMAGE}" bash -lc 'dpkg --print-architecture')"
+ROS_DISTRO="${ROS_DISTRO}" XGC2_DEB_ARCH="${IMAGE_ARCH}" \
+  "${SCRIPT_DIR}/fetch_scout_msgs.sh" "${DEPS_DIR}"
+
+docker run --rm --network none \
   -e XGC2_BUILD_GID="$(id -g)" \
   -e XGC2_BUILD_UID="$(id -u)" \
   -e ROS_DISTRO="${ROS_DISTRO}" \
-  "${docker_network_args[@]}" \
   -e DEBIAN_FRONTEND=noninteractive \
   -e INSTALL_CHECK="${INSTALL_CHECK}" \
   -v "${REPO_ROOT}:/workspace/repo:ro" \
   -v "${WORK_DIR}:/workspace/work" \
   -v "${OUTPUT_DIR}:/workspace/out" \
+  -v "${DEPS_DIR}:/workspace/deps:ro" \
   "${DOCKER_IMAGE}" \
   bash -lc '
     set -euo pipefail
@@ -87,38 +68,35 @@ docker run --rm \
 
     export DEBIAN_FRONTEND=noninteractive
     ros_prefix="/opt/ros/${ROS_DISTRO}"
-    ros_dependencies=(
-      "ros-${ROS_DISTRO}-geometry-msgs"
-      "ros-${ROS_DISTRO}-nav-msgs"
-      "ros-${ROS_DISTRO}-roscpp"
-      "ros-${ROS_DISTRO}-roslaunch"
-      "ros-${ROS_DISTRO}-rospack"
-      "ros-${ROS_DISTRO}-sensor-msgs"
-      "ros-${ROS_DISTRO}-std-msgs"
-    )
-    apt-get update
-    apt-get install -y --no-install-recommends \
-      build-essential \
-      clang-format \
-      clang-tidy \
-      cmake \
-      curl \
-      diffutils \
-      dpkg-dev \
-      fakeroot \
-      git \
-      libzmqpp-dev \
-      python3 \
-      rsync \
-      shellcheck \
-      "${ros_dependencies[@]}"
+    : "${ROS_DISTRO:?}"
+    for pkg in \
+      "ros-${ROS_DISTRO}-geometry-msgs" \
+      "ros-${ROS_DISTRO}-nav-msgs" \
+      "ros-${ROS_DISTRO}-roscpp" \
+      "ros-${ROS_DISTRO}-sensor-msgs" \
+      "ros-${ROS_DISTRO}-std-msgs" \
+      libzmqpp-dev
+    do
+      if ! dpkg -s "${pkg}" >/dev/null 2>&1; then
+        echo "image is missing ${pkg}; use xgc2-build-<ubuntu>-ros-<distro>" >&2
+        exit 1
+      fi
+    done
 
-    ROS_DISTRO="${ROS_DISTRO}" \
-      /workspace/repo/.xgc2/scripts/install_scout_msgs_dependency.sh
+    shopt -s nullglob
+    deps=(/workspace/deps/*.deb)
+    shopt -u nullglob
+    if [[ "${#deps[@]}" -eq 0 ]]; then
+      echo "no scout_msgs deb mounted" >&2
+      exit 1
+    fi
+    dpkg -i "${deps[@]}"
 
     rm -rf /workspace/work/src /workspace/work/build /workspace/work/devel /workspace/work/install-root
     mkdir -p /workspace/work/src/swarm_ros_bridge
-    rsync -a --delete /workspace/repo/ /workspace/work/src/swarm_ros_bridge/
+    rsync -a --delete \
+      --exclude .git --exclude .work --exclude debs \
+      /workspace/repo/ /workspace/work/src/swarm_ros_bridge/
 
     /workspace/work/src/swarm_ros_bridge/test/run_v2_core_tests.sh
 
@@ -174,7 +152,7 @@ docker run --rm \
     done
 
     if [[ "${INSTALL_CHECK}" == "true" ]]; then
-      apt-get install -y "${package_debs[0]}"
+      dpkg -i "${package_debs[0]}"
       package_name="ros-${ROS_DISTRO}-swarm-ros-bridge"
       verification="$(dpkg -V "${package_name}")"
       if [[ -n "${verification}" ]]; then

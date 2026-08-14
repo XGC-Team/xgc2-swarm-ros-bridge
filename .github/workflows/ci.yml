@@ -41,18 +41,22 @@ jobs:
             distribution: bionic
             arch: amd64
             runner: ubuntu-latest
+            image: ghcr.io/xgc-team/xgc2-images/xgc2-build-bionic-ros-melodic:1.0.0
           - ros_distro: melodic
             distribution: bionic
             arch: arm64
             runner: ubuntu-24.04-arm
+            image: ghcr.io/xgc-team/xgc2-images/xgc2-build-bionic-ros-melodic:1.0.0
           - ros_distro: noetic
             distribution: focal
             arch: amd64
             runner: ubuntu-latest
+            image: ghcr.io/xgc-team/xgc2-images/xgc2-build-focal-ros-noetic:1.0.0
           - ros_distro: noetic
             distribution: focal
             arch: arm64
             runner: ubuntu-24.04-arm
+            image: ghcr.io/xgc-team/xgc2-images/xgc2-build-focal-ros-noetic:1.0.0
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
@@ -61,6 +65,7 @@ jobs:
         run: |
           .xgc2/scripts/build_debs_in_docker.sh \
             --ros-distro "${{ matrix.ros_distro }}" \
+            --image "${{ matrix.image }}" \
             --work-dir "$RUNNER_TEMP/xgc2-swarm-ros-bridge-${{ matrix.ros_distro }}-${{ matrix.arch }}" \
             --output-dir "$GITHUB_WORKSPACE/debs"
 
