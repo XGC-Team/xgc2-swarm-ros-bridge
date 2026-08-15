@@ -27,10 +27,6 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Build ROS Noetic/Focal source contract
-        run: .xgc2/scripts/check_noetic_catkin_in_docker.sh
-
   build-debs:
     name: ${{ matrix.ros_distro }} deb (${{ matrix.arch }})
     strategy:
@@ -60,6 +56,11 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
+
+
+      - name: Build ROS Noetic/Focal source contract
+        run: .xgc2/scripts/check_noetic_catkin_in_docker.sh
+
 
       - name: Build and install-check deb package
         run: |
