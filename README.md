@@ -14,11 +14,12 @@ sudo apt install ros-noetic-swarm-ros-bridge
 ```
 
 Robot-specific peer/topic YAML belongs in the consuming robot product. The
-compiled message set is still:
+compiled message set is:
 
 - `sensor_msgs/Imu`
 - `geometry_msgs/Twist`
 - `std_msgs/String`
+- `std_msgs/Float32`
 
 CI builds amd64 and arm64 debs for both distributions inside XGC2 `xgc2-build`
 images. Extra ROS message types still need a rebuild because headers are
@@ -128,7 +129,7 @@ We also provide a simple latency test demo between two machines. Please refer to
 
 ### * More ROS message types
 
-The default supported ROS message types are only `sensor_msgs/Imu` , `geometry_msgs/Twist` and `std_msgs/String`. If you need more types:
+The default supported ROS message types are `sensor_msgs/Imu`, `geometry_msgs/Twist`, `std_msgs/String`, and `std_msgs/Float32`. If you need more types:
 
 1. Modify the macros about MSG_TYPEx and MSG_CLASSx in `include/ros_sub_pub.hpp`, then it will generate template functions for different ros message types.  
 
@@ -136,8 +137,8 @@ The default supported ROS message types are only `sensor_msgs/Imu` , `geometry_m
 // In ros_sub_pub.hpp
 // uncomment and modify the following lines:
 #include <xxx_msgs/yy.h>
-#define MSG_TYPE4 "xxx_msgs/yy"
-#define MSG_CLASS4 xxx_msgs::yy
+#define MSG_TYPE5 "xxx_msgs/yy"
+#define MSG_CLASS5 xxx_msgs::yy
 ```
 
 We support up to 10 types modification. If that is still not enough, then you should modify the `topic_subscriber()`, `topic_publisher()` and `deserialize_publish()` in `include/ros_sub_pub.hpp` according to their styles.

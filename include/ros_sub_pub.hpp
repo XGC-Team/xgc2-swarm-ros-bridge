@@ -35,9 +35,9 @@
 #define MSG_TYPE3 "std_msgs/String"
 #define MSG_CLASS3 std_msgs::String
 
-// #include <xxx/yy.h>
-// #define MSG_TYPE4 "xxx/yy"
-// #define MSG_CLASS4 xxx::yy
+#include <std_msgs/Float32.h>
+#define MSG_TYPE4 "std_msgs/Float32"
+#define MSG_CLASS4 std_msgs::Float32
 
 // ......
 

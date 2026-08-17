@@ -2,6 +2,7 @@
 # sensor_msgs/Imu
 # geometry_msgs/Twist
 # std_msgs/String
+# std_msgs/Float32
 # (modify/add in ros_sub_pub.hpp if you need more)
 ### max number of send_topics supported: 50
 
