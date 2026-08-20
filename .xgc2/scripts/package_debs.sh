@@ -115,6 +115,8 @@ Compiled message types:
   sensor_msgs/Imu
   geometry_msgs/Twist
   std_msgs/String
+  std_msgs/Float32
+  std_msgs/UInt32
 EOF
 
 find "${PKG_ROOT}" -type d -exec chmod 0755 {} +
