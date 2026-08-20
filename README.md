@@ -129,7 +129,7 @@ We also provide a simple latency test demo between two machines. Please refer to
 
 ### * More ROS message types
 
-The default supported ROS message types are `sensor_msgs/Imu`, `geometry_msgs/Twist`, `std_msgs/String`, and `std_msgs/Float32`. If you need more types:
+The default supported ROS message types are `sensor_msgs/Imu`, `geometry_msgs/Twist`, `std_msgs/String`, `std_msgs/Float32`, and `std_msgs/UInt32`. If you need more types:
 
 1. Modify the macros about MSG_TYPEx and MSG_CLASSx in `include/ros_sub_pub.hpp`, then it will generate template functions for different ros message types.  
 

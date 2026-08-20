@@ -39,6 +39,10 @@
 #define MSG_TYPE4 "std_msgs/Float32"
 #define MSG_CLASS4 std_msgs::Float32
 
+#include <std_msgs/UInt32.h>
+#define MSG_TYPE5 "std_msgs/UInt32"
+#define MSG_CLASS5 std_msgs::UInt32
+
 // ......
 
 // #include <xxx/yy.h>
