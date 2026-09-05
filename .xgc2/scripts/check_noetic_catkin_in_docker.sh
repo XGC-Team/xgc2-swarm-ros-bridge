@@ -61,8 +61,9 @@ docker run --rm --network none \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_INSTALL_PREFIX=/workspace/work/install
 
+    (cd build && ctest --output-on-failure)
     test -x /workspace/work/install/lib/swarm_ros_bridge/bridge_node
     test ! -e /workspace/work/install/lib/libswarm_ros_bridge_protocol_v2.so
   '
 
-echo "ROS Noetic/Focal catkin source build passed"
+echo "ROS Noetic/Focal catkin source build and tests passed"
