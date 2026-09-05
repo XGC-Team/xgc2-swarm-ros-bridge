@@ -22,6 +22,7 @@
  */
 
 #include "bridge_node.hpp"
+#include "received_frame.hpp"
 
 // /* send messages frequency control */
 // // this is the original freq control func that has been deprecated
@@ -99,12 +100,9 @@ void sub_cb(const T &msg)
 template<typename T>
 void deserialize_pub(uint8_t* buffer_ptr, size_t msg_size, int i)
 {
-  T msg;
-  // deserialize the receiving messages into ROS msg
-  namespace ser = ros::serialization;
-  ser::IStream stream(buffer_ptr, msg_size);
-  ser::deserialize(stream, msg);
-  // publish ROS msg
+  // consumeReceivedFrame has already checked the ROS uint32_t length bound.
+  const T msg = swarm_ros_bridge::deserializeExact<T>(
+      buffer_ptr, static_cast<uint32_t>(msg_size));
   topic_pubs[i].publish(msg);
 }
 
@@ -120,25 +118,17 @@ void recv_func(int i)
     // std::cout << "ready receive!" << std::endl;
     // receive(&,true) for non-blocking, receive(&,false) for blocking
     bool dont_block = false; // 'true' leads to high cpu load
-    if (recv_flag = receivers[i]->receive(recv_array, dont_block))
+    if (receivers[i]->receive(recv_array, dont_block))
     {
-      // std::cout << "receive!" << std::endl;
-      size_t data_len;
-      recv_array >> data_len; // unpack meta data
-      /*  equal to:
-        recv_array.get(&data_len, recv_array.read_cursor++); 
-        void get(T &value, size_t const cursor){
-          uint8_t const* byte = static_cast<uint8_t const*>(raw_data(cursor)); 
-          b = *byte;} 
-      */
-      // a dynamic length array by unique_ptr
-      std::unique_ptr<uint8_t[]> recv_buffer(new uint8_t[data_len]);
-      // continue to copy the raw_data of recv_array into buffer
-      memcpy(recv_buffer.get(), static_cast<const uint8_t *>(recv_array.raw_data(recv_array.read_cursor())), data_len);
-      deserialize_publish(recv_buffer.get(), data_len, recvTopics[i].type, i);
-
-      // std::cout << data_len << std::endl;
-      // std::cout << recv_buffer.get() << std::endl;
+      std::string rejection;
+      recv_flag = swarm_ros_bridge::consumeReceivedFrame(
+          recv_array, [i](uint8_t* bytes, uint32_t length) {
+            deserialize_publish(bytes, length, recvTopics[i].type, i);
+          }, rejection);
+      if (!recv_flag) {
+        ROS_WARN_THROTTLE(1.0, "[bridge_node] Rejected frame for %s: %s",
+                          recvTopics[i].name.c_str(), rejection.c_str());
+      }
     }
 
     /* if receive() does not block, sleep to decrease loop rate */
@@ -272,7 +262,7 @@ int main(int argc, char **argv)
     if (topic.name.at(0) != '/') {
       std::cout << ns;
       if (ns != "/") {std::cout << "/";}
-    }  // print namespace prefix if topic.name is not global
+    }  // print namespace prefix if topic name is not global
     std::cout << topic.name << "  (from " << recv_topic_xml["srcIP"]  << ")" << std::endl;
   }
 
@@ -321,10 +311,14 @@ int main(int argc, char **argv)
   }
 
   // ****************** launch receive threads *****************************
+  // Finish shared vector initialization before any worker can access it.
   for (int32_t i=0; i < len_recv; ++i)
   {
     recv_thread_flags.emplace_back(std::make_unique<std::atomic<bool>>(true)); // enable receive thread flags
     recv_flags_last.emplace_back(false); // receive success flag
+  }
+  for (int32_t i=0; i < len_recv; ++i)
+  {
     recv_threads.emplace_back(std::thread(&recv_func, i));
   }
 

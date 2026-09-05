@@ -39,6 +39,16 @@ if(CATKIN_ENABLE_TESTING)
       zmqpp
     )
 
+    add_executable(bridge_received_frame_test test/received_frame_test.cpp)
+    target_compile_options(bridge_received_frame_test PRIVATE -fsanitize=address -fno-omit-frame-pointer)
+    set_target_properties(bridge_received_frame_test PROPERTIES LINK_FLAGS "-fsanitize=address")
+    target_link_libraries(bridge_received_frame_test ${catkin_LIBRARIES} zmq zmqpp)
+    add_test(NAME bridge_received_frame_asan COMMAND bridge_received_frame_test)
+    set_tests_properties(bridge_received_frame_asan PROPERTIES
+      TIMEOUT 15
+      ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0:abort_on_error=1"
+    )
+
     add_test(
       NAME bridge_lifecycle_asan
       COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/bridge_lifecycle_test.py $<TARGET_FILE:bridge_node_asan_test>
