@@ -20,6 +20,7 @@ compiled message set is:
 - `geometry_msgs/Twist`
 - `std_msgs/String`
 - `std_msgs/Float32`
+- `std_msgs/UInt32`
 
 CI builds amd64 and arm64 debs for both distributions inside XGC2 `xgc2-build`
 images. Extra ROS message types still need a rebuild because headers are
