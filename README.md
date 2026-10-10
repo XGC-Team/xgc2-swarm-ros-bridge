@@ -1,12 +1,18 @@
 # swarm_ros_bridge
 
-> :heavy_exclamation_mark: (Updated on 2026.3.20) The author strongly recommend you to move to the zenoh ROS bridge, which has automatic ROS topic discovery mechanism and better port management. ROS1 zenoh bridge: https://github.com/eclipse-zenoh/zenoh-plugin-ros1   ROS2 zenoh bridge: https://github.com/eclipse-zenoh/zenoh-plugin-ros2dds  But the topic remapping and throttling is better in swarm_ros_bridge.
-
 ## XGC2 Product
 
-This repository is the upstream ZeroMQ `bridge_node`, packaged for Melodic and
-Noetic. The job is to keep that ZMQ path stable. There is no second protocol
-and no Zenoh stack in this package.
+**Legacy compatibility, kept unchanged.** This repository packages the upstream ZeroMQ `bridge_node` for ROS Melodic
+and Noetic so that the existing XGC2 robot products keep the ROS bridging they use today. The node, its launch files
+and the configuration format stay as they are.
+
+- **Not part of same-entity aggregation.** The package takes no part in aggregation: it is not an aggregated module,
+  needs no aggregation host or adapter integration, and has no aggregation work items. Aggregation work on the
+  platform does not require migrating, rewriting or removing it.
+- **Not the place for new communication work.** More reliable or more efficient communication is to be developed
+  separately, on Zenoh together with aggregation. That work does not happen in this package: there is no second
+  protocol and no Zenoh stack here, no new communication feature is planned, and existing consumers are not required
+  to move. Only fixes that keep the existing ZeroMQ path working belong here.
 
 ```bash
 sudo apt install ros-melodic-swarm-ros-bridge
@@ -25,6 +31,10 @@ compiled message set is:
 CI builds amd64 and arm64 debs for both distributions inside XGC2 `xgc2-build`
 images. Extra ROS message types still need a rebuild because headers are
 registered at compile time.
+
+The note below is the upstream author's advice and does not describe XGC2 plans.
+
+> :heavy_exclamation_mark: (Updated on 2026.3.20) The author strongly recommend you to move to the zenoh ROS bridge, which has automatic ROS topic discovery mechanism and better port management. ROS1 zenoh bridge: https://github.com/eclipse-zenoh/zenoh-plugin-ros1   ROS2 zenoh bridge: https://github.com/eclipse-zenoh/zenoh-plugin-ros2dds  But the topic remapping and throttling is better in swarm_ros_bridge.
 
 ## Introduction
 
@@ -186,14 +196,6 @@ Then recompile:
 cd swarm_ros_bridge_ws/
 catkin_make
 ```
-
-## Future Work
-
-1.  Dynamic RPC, including dynamic node discovery, online topic change, and ground station monitor.
-2.  Support UDP protocol for mass data transmission like video streams. 
-3.  Support ROS service transmission with ZeroMQ request-reply mode.
-4.  Support ROS2 topic and service transmission.
-
 
 ## Contributor
 
