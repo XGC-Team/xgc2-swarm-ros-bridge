@@ -1,7 +1,7 @@
 schema: xgc2.product.v1
 id: xgc2-swarm-ros-bridge
 name: XGC2 Swarm ROS Bridge
-version: 1.1.0-12
+version: 1.1.0-13
 kind: ros1-apt
 summary: ROS Melodic and Noetic ZeroMQ bridge for selected swarm robot topics.
 groups:
@@ -56,5 +56,5 @@ ownership:
 release:
   workflow: release.yml
   apt_versions:
-    bionic: 1.1.0-12
-    focal: 1.1.0-12
+    bionic: 1.1.0-13
+    focal: 1.1.0-13
