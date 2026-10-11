@@ -28,5 +28,6 @@
 
   <test_depend>rospy</test_depend>
   <test_depend>roslaunch</test_depend>
+  <test_depend>python3-zmq</test_depend>
 
 </package>

@@ -62,7 +62,6 @@ std::vector<TopicInfo> recvTopics; // receive topics info struct vector
 // ********************* zmq socket initialize ***************************
 zmqpp::context_t context;
 std::vector<std::unique_ptr<zmqpp::socket>> senders;   //index senders
-std::vector<std::unique_ptr<zmqpp::socket>> receivers; //index receivers
 
 // ******************* ROS subscribe and publish *************************
 std::vector<ros::Subscriber> topic_subs;
@@ -73,14 +72,14 @@ std::vector<ros::Time> sub_t_last;
 std::vector<int> send_num;
 bool send_freq_control(int i);
 
-// ****************** launch receive threads *****************************
-std::vector<std::unique_ptr<std::atomic<bool>>> recv_thread_flags;
-std::vector<uint8_t> recv_flags_last;
-std::vector<std::thread> recv_threads;
-void recv_func(int i);
+// One event watcher owns all receiving sockets and reconnects.
+std::vector<std::unique_ptr<std::atomic<unsigned>>> recv_subscribers;
+std::atomic<bool> recv_running{true};
+std::atomic<bool> bridge_failed{false};
+int recv_wakeup = -1;
+void recv_func();
 
 // ***************** stop send/receive ******************************
 void stop_send(int i);
-void stop_recv(int i);
 
 #endif

@@ -39,6 +39,7 @@ docker run --rm --network none \
       ros-noetic-roscpp \
       ros-noetic-sensor-msgs \
       ros-noetic-std-msgs \
+      python3-zmq \
       libzmqpp-dev
     do
       if ! dpkg -s "${pkg}" >/dev/null 2>&1; then
@@ -55,8 +56,7 @@ docker run --rm --network none \
     source /opt/ros/noetic/setup.bash
     set -u
     cd /workspace/work
-    parallel_jobs="$(nproc)"
-    catkin_make -j"${parallel_jobs}" -l"${parallel_jobs}" install \
+    catkin_make -j2 -l2 install \
       -DCATKIN_ENABLE_TESTING=ON \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_INSTALL_PREFIX=/workspace/work/install

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 import os
+import random
 import signal
 import socket
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import unittest
@@ -18,9 +20,15 @@ BRIDGE_BINARY = None
 
 
 def find_free_port():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.bind(("127.0.0.1", 0))
-        return sock.getsockname()[1]
+    for _ in range(100):
+        port = random.randint(20000, 40000)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            try:
+                sock.bind(("127.0.0.1", port))
+                return port
+            except OSError:
+                pass
+    raise RuntimeError("No private ROS test port available")
 
 
 def wait_for_master(uri, timeout=10.0):
@@ -52,6 +60,8 @@ def stop_process(process, timeout=10.0):
 class BridgeLifecycleTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.ros_home = tempfile.TemporaryDirectory(prefix="bridge-lifecycle-")
+        cls.addClassCleanup(cls.ros_home.cleanup)
         cls.master_port = find_free_port()
         cls.topic_port = find_free_port()
         cls.master_uri = "http://127.0.0.1:{}".format(cls.master_port)
@@ -60,6 +70,7 @@ class BridgeLifecycleTest(unittest.TestCase):
             "ROS_MASTER_URI": cls.master_uri,
             "ROS_IP": "127.0.0.1",
             "ROS_HOSTNAME": "127.0.0.1",
+            "ROS_HOME": cls.ros_home.name,
         })
         os.environ.update(cls.env)
         cls.roscore = subprocess.Popen(
@@ -68,6 +79,7 @@ class BridgeLifecycleTest(unittest.TestCase):
             stdout=subprocess.DEVNULL,
             stderr=subprocess.STDOUT,
         )
+        cls.addClassCleanup(stop_process, cls.roscore)
         wait_for_master(cls.master_uri)
 
         rospy.init_node("bridge_lifecycle_test", anonymous=True, disable_signals=True)
@@ -96,15 +108,16 @@ class BridgeLifecycleTest(unittest.TestCase):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
+        cls.addClassCleanup(stop_process, cls.bridge)
 
     @classmethod
     def tearDownClass(cls):
         if getattr(cls, "bridge", None) is not None and cls.bridge.poll() is None:
             stop_process(cls.bridge)
-        if getattr(cls, "roscore", None) is not None:
-            stop_process(cls.roscore)
         if rospy.core.is_initialized():
             rospy.signal_shutdown("test complete")
+        if getattr(cls, "roscore", None) is not None:
+            stop_process(cls.roscore)
 
     def test_message_round_trip_and_clean_shutdown(self):
         received = threading.Event()

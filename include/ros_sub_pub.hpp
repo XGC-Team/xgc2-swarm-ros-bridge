@@ -62,7 +62,9 @@ ros::Subscriber nh_sub(std::string topic_name, ros::NodeHandle nh, int i);
 
 ros::Subscriber topic_subscriber(std::string topic_name, std::string msg_type, ros::NodeHandle nh, int i);
 
-ros::Publisher topic_publisher(std::string topic_name, std::string msg_type, ros::NodeHandle nh);
+void recv_subscriber_change(int i, bool connected);
+
+ros::Publisher topic_publisher(std::string topic_name, std::string msg_type, ros::NodeHandle nh, int i);
 
 template<typename T>
 void deserialize_pub(uint8_t* buffer_ptr, size_t msg_size, int i);
@@ -88,7 +90,7 @@ void (*sub_callbacks[])(const T &)=
 template <typename T>
 ros::Subscriber nh_sub(std::string topic_name, ros::NodeHandle nh, int i)
 {
-  return nh.subscribe(topic_name, 10, sub_callbacks<T>[i], ros::TransportHints().tcpNoDelay());
+  return nh.subscribe(topic_name, 1, sub_callbacks<T>[i], ros::TransportHints().tcpNoDelay());
 }
 
 ros::Subscriber topic_subscriber(std::string topic_name, std::string msg_type, ros::NodeHandle nh, int i)
@@ -137,47 +139,53 @@ ros::Subscriber topic_subscriber(std::string topic_name, std::string msg_type, r
     exit(1);
 }
 
-ros::Publisher topic_publisher(std::string topic_name, std::string msg_type, ros::NodeHandle nh)
+ros::Publisher topic_publisher(std::string topic_name, std::string msg_type, ros::NodeHandle nh, int i)
 {
+  const ros::SubscriberStatusCallback connected = [i](const ros::SingleSubscriberPublisher&) {
+    recv_subscriber_change(i, true);
+  };
+  const ros::SubscriberStatusCallback disconnected = [i](const ros::SingleSubscriberPublisher&) {
+    recv_subscriber_change(i, false);
+  };
   #ifdef MSG_TYPE1
     if (msg_type == MSG_TYPE1)
-        return nh.advertise<MSG_CLASS1>(topic_name, 10);
+        return nh.advertise<MSG_CLASS1>(topic_name, 1, connected, disconnected);
   #endif
   #ifdef MSG_TYPE2
     if (msg_type == MSG_TYPE2)
-        return nh.advertise<MSG_CLASS2>(topic_name, 10);
+        return nh.advertise<MSG_CLASS2>(topic_name, 1, connected, disconnected);
   #endif
   #ifdef MSG_TYPE3
     if (msg_type == MSG_TYPE3)
-        return nh.advertise<MSG_CLASS3>(topic_name, 10);
+        return nh.advertise<MSG_CLASS3>(topic_name, 1, connected, disconnected);
   #endif
   #ifdef MSG_TYPE4
     if (msg_type == MSG_TYPE4)
-        return nh.advertise<MSG_CLASS4>(topic_name, 10);
+        return nh.advertise<MSG_CLASS4>(topic_name, 1, connected, disconnected);
   #endif
   #ifdef MSG_TYPE5
     if (msg_type == MSG_TYPE5)
-        return nh.advertise<MSG_CLASS5>(topic_name, 10);
+        return nh.advertise<MSG_CLASS5>(topic_name, 1, connected, disconnected);
   #endif
   #ifdef MSG_TYPE6
     if (msg_type == MSG_TYPE6)
-        return nh.advertise<MSG_CLASS6>(topic_name, 10);
+        return nh.advertise<MSG_CLASS6>(topic_name, 1, connected, disconnected);
   #endif
   #ifdef MSG_TYPE7
     if (msg_type == MSG_TYPE7)
-        return nh.advertise<MSG_CLASS7>(topic_name, 10);
+        return nh.advertise<MSG_CLASS7>(topic_name, 1, connected, disconnected);
   #endif
   #ifdef MSG_TYPE8
     if (msg_type == MSG_TYPE8)
-        return nh.advertise<MSG_CLASS8>(topic_name, 10);
+        return nh.advertise<MSG_CLASS8>(topic_name, 1, connected, disconnected);
   #endif
   #ifdef MSG_TYPE9
     if (msg_type == MSG_TYPE9)
-        return nh.advertise<MSG_CLASS9>(topic_name, 10);
+        return nh.advertise<MSG_CLASS9>(topic_name, 1, connected, disconnected);
   #endif
   #ifdef MSG_TYPE10
     if (msg_type == MSG_TYPE10)
-        return nh.advertise<MSG_CLASS10>(topic_name, 10);
+        return nh.advertise<MSG_CLASS10>(topic_name, 1, connected, disconnected);
   #endif
     ROS_FATAL("Invalid ROS msg_type \"%s\" in configuration!", msg_type.c_str());
     exit(1);

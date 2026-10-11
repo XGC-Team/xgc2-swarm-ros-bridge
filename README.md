@@ -2,9 +2,9 @@
 
 ## XGC2 Product
 
-**Legacy compatibility, kept unchanged.** This repository packages the upstream ZeroMQ `bridge_node` for ROS Melodic
-and Noetic so that the existing XGC2 robot products keep the ROS bridging they use today. The node, its launch files
-and the configuration format stay as they are.
+**Legacy compatibility.** This repository packages the upstream ZeroMQ `bridge_node` for ROS Melodic
+and Noetic so that the existing XGC2 robot products keep the ROS bridging they use today. The launch files, configuration format and multipart wire
+format stay compatible. Runtime fixes keep the existing ZeroMQ path working.
 
 - **Not part of same-entity aggregation.** The package takes no part in aggregation: it is not an aggregated module,
   needs no aggregation host or adapter integration, and has no aggregation work items. Aggregation work on the
@@ -31,6 +31,48 @@ compiled message set is:
 CI builds amd64 and arm64 debs for both distributions inside XGC2 `xgc2-build`
 images. Extra ROS message types still need a rebuild because headers are
 registered at compile time.
+
+## Parallel startup and reconnect
+
+Start the node in parallel with its ROS master, publishers and remote bridges.
+Use `roslaunch --wait` when launching against a session master so roslaunch waits
+for that master instead of starting another one. Configuration still comes from
+private ROS parameters. The node waits for its hard master resource indefinitely
+with full jitter: 250 ms initially, doubling to a 30 s cap, one bounded XMLRPC
+request at a time. SIGINT and SIGTERM cancel this wait. Once bound, one background
+watcher checks the master's PID every 10 s with a 1 s deadline and reads cached
+`/run_id` updates. Master loss or replacement stops the node; data peer loss does
+not. This legacy ROS node reports status through logs, without an XRPC service.
+
+Configured topics register through normal ROS subscriptions and advertisements;
+no topic discovery polling or startup topic wait is needed. Publisher updates
+handle topics appearing later and publishers restarting. A receive connection
+starts with the first subscriber to its ROS output and stops after the last one
+leaves. Multiple outputs from one endpoint share a socket and retry schedule.
+One event watcher handles all ZeroMQ peers, using close events and exponential
+full jitter from 250 ms to 30 s. It resets backoff after a valid sample, keeps one
+attempt in flight per endpoint, and logs at most once per endpoint per 10 s with
+attempt and suppression counts. TCP keepalives detect silent link loss with
+a 10 s idle interval and three probes 10 s apart.
+
+ROS queues and ZeroMQ high water marks are one sample. Offline PUB data is dropped;
+receive batches publish their latest sample rather than replaying a backlog.
+The multipart length/payload envelope is retained because ZeroMQ conflation
+cannot preserve multipart frames. The bridge owns no mutable remote desired
+state; ZeroMQ replays the static subscription once on each new connection.
+
+The tests require `rospy`, `roslaunch` and `python3-zmq`, and always use private
+master ports from 20000 through 40000 and a temporary `ROS_HOME`. After configuring
+with `CATKIN_ENABLE_TESTING=ON` and building the test targets with `-j2`, run CTest
+from the build directory:
+
+```bash
+ctest -LE long --output-on-failure  # Fast startup, publisher restart and shutdown checks
+ctest -L long -V                   # Two measured 60-second outages and recovery
+```
+
+The Noetic source-contract CI script runs all tests, including the `long` label.
+No hardware or Gazebo is needed, and each test stops and waits for its children.
 
 The note below is the upstream author's advice and does not describe XGC2 plans.
 

@@ -29,6 +29,18 @@ target_link_libraries(bridge_node
 )
 
 if(CATKIN_ENABLE_TESTING)
+  add_test(NAME bridge_start_order
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/bridge_start_order_test.py $<TARGET_FILE:bridge_node>)
+  add_test(NAME bridge_peer_down_long
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/bridge_start_order_test.py $<TARGET_FILE:bridge_node> --long)
+  add_test(NAME bridge_master_down_long
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/bridge_start_order_test.py $<TARGET_FILE:bridge_node> --master-down-long)
+  add_test(NAME bridge_master_wait_stop
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/bridge_start_order_test.py $<TARGET_FILE:bridge_node> --master-wait-stop)
+  set_tests_properties(bridge_start_order PROPERTIES TIMEOUT 75)
+  set_tests_properties(bridge_peer_down_long PROPERTIES TIMEOUT 160 LABELS long)
+  set_tests_properties(bridge_master_down_long PROPERTIES TIMEOUT 160 LABELS long)
+  set_tests_properties(bridge_master_wait_stop PROPERTIES TIMEOUT 15)
   if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_executable(bridge_node_asan_test src/bridge_node.cpp)
     target_compile_options(bridge_node_asan_test PRIVATE -fsanitize=address -fno-omit-frame-pointer)
