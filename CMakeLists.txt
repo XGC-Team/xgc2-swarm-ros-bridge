@@ -29,6 +29,13 @@ target_link_libraries(bridge_node
 )
 
 if(CATKIN_ENABLE_TESTING)
+  # The start-order and outage tests use a real ZeroMQ peer from Python. An image without python3-zmq skips them
+  # loudly instead of failing the build; the lifecycle test below needs no peer.
+  execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "import zmq" RESULT_VARIABLE BRIDGE_PYTHON_ZMQ_RESULT
+    OUTPUT_QUIET ERROR_QUIET)
+  if(NOT BRIDGE_PYTHON_ZMQ_RESULT EQUAL 0)
+    message(WARNING "python3-zmq is not installed: the bridge start-order and outage tests are NOT registered")
+  else()
   add_test(NAME bridge_start_order
     COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/bridge_start_order_test.py $<TARGET_FILE:bridge_node>)
   add_test(NAME bridge_peer_down_long
@@ -41,6 +48,7 @@ if(CATKIN_ENABLE_TESTING)
   set_tests_properties(bridge_peer_down_long PROPERTIES TIMEOUT 160 LABELS long)
   set_tests_properties(bridge_master_down_long PROPERTIES TIMEOUT 160 LABELS long)
   set_tests_properties(bridge_master_wait_stop PROPERTIES TIMEOUT 15)
+  endif()
   if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_executable(bridge_node_asan_test src/bridge_node.cpp)
     target_compile_options(bridge_node_asan_test PRIVATE -fsanitize=address -fno-omit-frame-pointer)
