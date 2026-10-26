@@ -1,7 +1,7 @@
 schema: xgc2.product.v1
 id: xgc2-swarm-ros-bridge
 name: XGC2 Swarm ROS Bridge
-version: 1.1.0-15
+version: 1.1.0-13
 kind: ros1-apt
 summary: ROS Melodic and Noetic ZeroMQ bridge for selected swarm robot topics.
 groups:
@@ -26,7 +26,7 @@ apt:
   - ros-melodic-swarm-ros-bridge
   - ros-noetic-swarm-ros-bridge
   depends:
-  - libzmqpp4
+  - libzmqpp-dev
   - ros-melodic-geometry-msgs
   - ros-melodic-roscpp
   - ros-melodic-sensor-msgs
@@ -35,12 +35,6 @@ apt:
   - ros-noetic-roscpp
   - ros-noetic-sensor-msgs
   - ros-noetic-std-msgs
-  - ros-melodic-nav-msgs
-  - ros-melodic-mavros-msgs
-  - ros-melodic-rosgraph-msgs
-  - ros-noetic-nav-msgs
-  - ros-noetic-mavros-msgs
-  - ros-noetic-rosgraph-msgs
 usage:
   install: |
     sudo apt update
@@ -52,11 +46,7 @@ usage:
   notes: |
     Generic ZeroMQ bridge_node. Robot-specific topic and peer YAML lives in
     the consuming robot product. Compiled messages: sensor_msgs/Imu,
-    geometry_msgs/Twist, std_msgs/String, std_msgs/Float32, std_msgs/UInt32,
-    geometry_msgs/PoseStamped, geometry_msgs/TwistStamped, nav_msgs/Path,
-    mavros_msgs/State, mavros_msgs/ExtendedState and rosgraph_msgs/Clock.
-    bridge.launch takes an explicit configuration argument; it does not discover
-    the ROS graph or infer experiment mode.
+    geometry_msgs/Twist, std_msgs/String, std_msgs/Float32, std_msgs/UInt32.
 ownership:
   paths:
   - /opt/ros/melodic/share/swarm_ros_bridge
@@ -66,5 +56,5 @@ ownership:
 release:
   workflow: release.yml
   apt_versions:
-    bionic: 1.1.0-14
-    focal: 1.1.0-14
+    bionic: 1.1.0-13
+    focal: 1.1.0-13

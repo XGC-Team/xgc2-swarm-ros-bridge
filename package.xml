@@ -26,10 +26,6 @@
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>libzmqpp-dev</exec_depend>
 
-  <depend>nav_msgs</depend>
-  <depend>mavros_msgs</depend>
-  <depend>rosgraph_msgs</depend>
-
   <test_depend>rospy</test_depend>
   <test_depend>roslaunch</test_depend>
   <test_depend>python3-zmq</test_depend>

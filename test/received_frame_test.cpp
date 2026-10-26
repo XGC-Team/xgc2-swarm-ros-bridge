@@ -1,18 +1,10 @@
 #include "received_frame.hpp"
-#include "peer_address.hpp"
 
 #include <geometry_msgs/Twist.h>
 #include <sensor_msgs/Imu.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/String.h>
 #include <std_msgs/UInt32.h>
-
-#include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/TwistStamped.h>
-#include <nav_msgs/Path.h>
-#include <mavros_msgs/State.h>
-#include <mavros_msgs/ExtendedState.h>
-#include <rosgraph_msgs/Clock.h>
 
 #include <iostream>
 #include <vector>
@@ -73,18 +65,6 @@ void roundTrip(const T& input, const char* name) {
 
 int main() {
   try {
-    const std::map<std::string,std::string> peers{{"robot","192.0.2.1"}};
-    require(swarm_ros_bridge::peerAddress("robot",peers)=="192.0.2.1","named endpoint changed");
-    require(swarm_ros_bridge::peerAddress("192.0.2.2",peers)=="192.0.2.2","literal endpoint rejected");
-    bool invalid=false;try{swarm_ros_bridge::peerAddress("missing",peers);}catch(const std::invalid_argument&){invalid=true;}
-    require(invalid,"unknown peer silently accepted");
-    geometry_msgs::PoseStamped pose;pose.header.stamp=ros::Time(42,123);pose.header.frame_id="world";pose.pose.position.x=1.25;pose.pose.orientation.w=1;
-    roundTrip(pose,"timestamped pose");
-    geometry_msgs::TwistStamped measuredVelocity;measuredVelocity.header=pose.header;measuredVelocity.twist.linear.x=0.5;roundTrip(measuredVelocity,"timestamped velocity");
-    nav_msgs::Path prediction;prediction.header=pose.header;prediction.poses.push_back(pose);roundTrip(prediction,"algorithm prediction");
-    mavros_msgs::State state;state.armed=true;state.mode="OFFBOARD";roundTrip(state,"flight state");
-    mavros_msgs::ExtendedState extended;extended.landed_state=2;roundTrip(extended,"landed state");
-    rosgraph_msgs::Clock clock;clock.clock=ros::Time(42,123);roundTrip(clock,"simulation clock");
     zmqpp::message none;
     reject(none, "no parts");
     zmqpp::message missing;

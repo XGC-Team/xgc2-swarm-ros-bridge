@@ -48,7 +48,5 @@ grep -Fq "libroscpp" <<<"${legacy_ldd}"
 readelf -h "${PREFIX}/lib/${ROS_PACKAGE}/bridge_node" >/dev/null
 
 roslaunch --files "${ROS_PACKAGE}" test.launch >/dev/null
-roslaunch --files "${ROS_PACKAGE}" bridge.launch \
-  'configuration:={"send_topics":[],"recv_topics":[]}' namespace:=/observation_test >/dev/null
 
 echo "Installed package check passed"

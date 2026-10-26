@@ -96,7 +96,7 @@ Section: misc
 Priority: optional
 Architecture: ${ARCH}
 Maintainer: XGC2 <apt@example.com>
-Depends: libzmqpp4, ros-${ROS_DISTRO}-geometry-msgs, ros-${ROS_DISTRO}-roscpp, ros-${ROS_DISTRO}-sensor-msgs, ros-${ROS_DISTRO}-std-msgs, ros-${ROS_DISTRO}-nav-msgs, ros-${ROS_DISTRO}-mavros-msgs, ros-${ROS_DISTRO}-rosgraph-msgs
+Depends: libzmqpp-dev, ros-${ROS_DISTRO}-geometry-msgs, ros-${ROS_DISTRO}-roscpp, ros-${ROS_DISTRO}-sensor-msgs, ros-${ROS_DISTRO}-std-msgs
 Description: ZeroMQ ROS1 bridge for swarm robot topics
  ROS ${ROS_DISTRO} swarm_ros_bridge package for forwarding configured ROS
  topics between robots over ZeroMQ.

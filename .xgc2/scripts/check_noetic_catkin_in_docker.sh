@@ -38,9 +38,6 @@ docker run --rm --network none \
       ros-noetic-geometry-msgs \
       ros-noetic-roscpp \
       ros-noetic-sensor-msgs \
-      ros-noetic-nav-msgs \
-      ros-noetic-mavros-msgs \
-      ros-noetic-rosgraph-msgs \
       ros-noetic-std-msgs \
       libzmqpp-dev
     do
