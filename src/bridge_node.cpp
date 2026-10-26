@@ -370,8 +370,9 @@ int main(int argc, char **argv)
 
   //************************ Parse configuration file **************************
   // get hostnames and IPs
-  if (nh.getParam("IP", ip_xml) == false){
-    ROS_ERROR("[bridge node] No IP found in the configuration!");
+  const bool has_peer_aliases = nh.getParam("IP", ip_xml);
+  if (has_peer_aliases && ip_xml.getType() != XmlRpc::XmlRpcValue::TypeStruct) {
+    ROS_ERROR("[bridge node] IP aliases must be an object");
     return 1;
   }
   // get "send topics" params (topic_name, topic_type, IP, port)
@@ -400,7 +401,7 @@ int main(int argc, char **argv)
   }
 
   std::cout << "-------------IP------------" << std::endl;
-  for (auto iter = ip_xml.begin(); iter != ip_xml.end(); ++iter)
+  if (has_peer_aliases) for (auto iter = ip_xml.begin(); iter != ip_xml.end(); ++iter)
   {
     std::string host_name = iter->first;
     std::string host_ip = iter->second;

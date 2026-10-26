@@ -256,6 +256,9 @@ Some applications:
 `bridge.launch` accepts the ordinary IP/send_topics/recv_topics configuration as
 the `configuration` argument. The caller selects source and destination topics;
 there is no ROS graph discovery or experiment-mode inference in this bridge.
+Peers may use declared IP aliases or literal IPv4 addresses; aliases are optional
+when every endpoint is literal. Unknown alias names fail explicitly. A caller
+can place the bridge node under an explicit ROS namespace.
 
 In addition to the existing telemetry types, the compiled bridge supports
 PoseStamped, TwistStamped, Path, MAVROS State/ExtendedState and ROS Clock.
