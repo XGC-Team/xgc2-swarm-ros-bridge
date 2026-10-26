@@ -92,9 +92,9 @@ try:
         addresses[role]=json.loads(call(['docker','inspect',name]))[0]['NetworkSettings']['Networks'][network]['IPAddress']
     observations=[('mavros/local_position/pose','geometry_msgs/PoseStamped'),('pose','geometry_msgs/PoseStamped'),('mavros/state','mavros_msgs/State'),('mavros/extended_state','mavros_msgs/ExtendedState'),('alg/predicted_trajectory','nav_msgs/Path')]
     for role in ['station','robot']:
-        observation=[dict(topic_name='/uav1/'+topic,msg_type=kind,max_freq=10,srcIP='robot',srcPort=31000+i) for i,(topic,kind) in enumerate(observations)]
-        clock=[dict(topic_name='/test/clock',msg_type='rosgraph_msgs/Clock',max_freq=10,srcIP='station',srcPort=31010)]
-        config={'IP':addresses,'send_topics':observation if role=='robot' else clock,'recv_topics':clock if role=='robot' else observation}
+        observation=[dict(topic_name='/uav1/'+topic,msg_type=kind,max_freq=10,srcIP=addresses['robot'],srcPort=31000+i) for i,(topic,kind) in enumerate(observations)]
+        clock=[dict(topic_name='/test/clock',msg_type='rosgraph_msgs/Clock',max_freq=10,srcIP=addresses['station'],srcPort=31010)]
+        config={'IP':{},'send_topics':observation if role=='robot' else clock,'recv_topics':clock if role=='robot' else observation}
         (root/(role+'.json')).write_text(json.dumps(config))
     def execute(role):
         result=subprocess.run(['docker','exec',network+'-'+role,'bash','-c',start,'fixture',role],text=True,capture_output=True,timeout=25)

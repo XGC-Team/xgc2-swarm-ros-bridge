@@ -53,9 +53,10 @@ if(CATKIN_ENABLE_TESTING)
   set_tests_properties(bridge_master_wait_stop PROPERTIES TIMEOUT 15)
   endif()
   if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    # Keep ASan test executables at a fixed load address; production remains PIE.
     add_executable(bridge_node_asan_test src/bridge_node.cpp)
-    target_compile_options(bridge_node_asan_test PRIVATE -fsanitize=address -fno-omit-frame-pointer)
-    set_target_properties(bridge_node_asan_test PROPERTIES LINK_FLAGS "-fsanitize=address")
+    target_compile_options(bridge_node_asan_test PRIVATE -fsanitize=address -fno-omit-frame-pointer -fno-pie)
+    set_target_properties(bridge_node_asan_test PROPERTIES LINK_FLAGS "-fsanitize=address -no-pie")
     target_link_libraries(bridge_node_asan_test
       ${catkin_LIBRARIES}
       zmq
@@ -63,8 +64,8 @@ if(CATKIN_ENABLE_TESTING)
     )
 
     add_executable(bridge_received_frame_test test/received_frame_test.cpp)
-    target_compile_options(bridge_received_frame_test PRIVATE -fsanitize=address -fno-omit-frame-pointer)
-    set_target_properties(bridge_received_frame_test PROPERTIES LINK_FLAGS "-fsanitize=address")
+    target_compile_options(bridge_received_frame_test PRIVATE -fsanitize=address -fno-omit-frame-pointer -fno-pie)
+    set_target_properties(bridge_received_frame_test PROPERTIES LINK_FLAGS "-fsanitize=address -no-pie")
     target_link_libraries(bridge_received_frame_test ${catkin_LIBRARIES} zmq zmqpp)
     add_test(NAME bridge_received_frame_asan COMMAND bridge_received_frame_test)
     set_tests_properties(bridge_received_frame_asan PROPERTIES

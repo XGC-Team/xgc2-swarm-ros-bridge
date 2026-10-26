@@ -1,4 +1,5 @@
 #include "received_frame.hpp"
+#include "peer_address.hpp"
 
 #include <geometry_msgs/Twist.h>
 #include <sensor_msgs/Imu.h>
@@ -72,6 +73,11 @@ void roundTrip(const T& input, const char* name) {
 
 int main() {
   try {
+    const std::map<std::string,std::string> peers{{"robot","192.0.2.1"}};
+    require(swarm_ros_bridge::peerAddress("robot",peers)=="192.0.2.1","named endpoint changed");
+    require(swarm_ros_bridge::peerAddress("192.0.2.2",peers)=="192.0.2.2","literal endpoint rejected");
+    bool invalid=false;try{swarm_ros_bridge::peerAddress("missing",peers);}catch(const std::invalid_argument&){invalid=true;}
+    require(invalid,"unknown peer silently accepted");
     geometry_msgs::PoseStamped pose;pose.header.stamp=ros::Time(42,123);pose.header.frame_id="world";pose.pose.position.x=1.25;pose.pose.orientation.w=1;
     roundTrip(pose,"timestamped pose");
     geometry_msgs::TwistStamped measuredVelocity;measuredVelocity.header=pose.header;measuredVelocity.twist.linear.x=0.5;roundTrip(measuredVelocity,"timestamped velocity");

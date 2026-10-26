@@ -22,6 +22,7 @@
 
 #include "bridge_node.hpp"
 #include "received_frame.hpp"
+#include "peer_address.hpp"
 #include <algorithm>
 #include <chrono>
 #include <csignal>
@@ -420,7 +421,9 @@ int main(int argc, char **argv)
     std::string topic_name = send_topic_xml["topic_name"];
     std::string msg_type = send_topic_xml["msg_type"];
     int max_freq = send_topic_xml["max_freq"];
-    std::string srcIP = ip_map[send_topic_xml["srcIP"]];
+    std::string srcIP;
+    try { srcIP = swarm_ros_bridge::peerAddress(std::string(send_topic_xml["srcIP"]), ip_map); }
+    catch (const std::exception& error) { ROS_ERROR("%s", error.what()); return 1; }
     int srcPort = send_topic_xml["srcPort"];
     TopicInfo topic = {.name=topic_name, .type=msg_type, .max_freq=max_freq, .ip=srcIP, .port=srcPort};
     sendTopics.emplace_back(topic);
@@ -445,7 +448,9 @@ int main(int argc, char **argv)
     std::string topic_name = recv_topic_xml["topic_name"];
     std::string msg_type = recv_topic_xml["msg_type"];
     int max_freq = recv_topic_xml["max_freq"];
-    std::string srcIP = ip_map[recv_topic_xml["srcIP"]];
+    std::string srcIP;
+    try { srcIP = swarm_ros_bridge::peerAddress(std::string(recv_topic_xml["srcIP"]), ip_map); }
+    catch (const std::exception& error) { ROS_ERROR("%s", error.what()); return 1; }
     int srcPort = recv_topic_xml["srcPort"];
     TopicInfo topic = {.name=topic_name, .type=msg_type, .max_freq=max_freq, .ip=srcIP, .port=srcPort};
     recvTopics.emplace_back(topic);
