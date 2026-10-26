@@ -1,0 +1,7 @@
+<launch>
+  <!-- The caller owns the explicit source/destination roster. No graph discovery. -->
+  <arg name="configuration" />
+  <node pkg="swarm_ros_bridge" type="bridge_node" name="observation_bridge" output="screen" required="true">
+    <rosparam subst_value="true">$(arg configuration)</rosparam>
+  </node>
+</launch>

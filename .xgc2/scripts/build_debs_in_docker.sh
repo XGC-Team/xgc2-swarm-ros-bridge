@@ -66,6 +66,9 @@ docker run --rm --network none \
       "ros-${ROS_DISTRO}-geometry-msgs" \
       "ros-${ROS_DISTRO}-roscpp" \
       "ros-${ROS_DISTRO}-sensor-msgs" \
+      "ros-${ROS_DISTRO}-nav-msgs" \
+      "ros-${ROS_DISTRO}-mavros-msgs" \
+      "ros-${ROS_DISTRO}-rosgraph-msgs" \
       "ros-${ROS_DISTRO}-std-msgs" \
       libzmqpp-dev
     do

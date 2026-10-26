@@ -250,3 +250,21 @@ Some applications:
  **pyugvswarm** : a python package wrapper around unmanned ground vehicle (UGV) swarm positioning / communication / control ROS1 nodes. https://pyugvswarm.readthedocs.io/en/latest/overview.html
 
 ![img1](pictures/img1.png)
+
+## Explicit platform observations
+
+`bridge.launch` accepts the ordinary IP/send_topics/recv_topics configuration as
+the `configuration` argument. The caller selects source and destination topics;
+there is no ROS graph discovery or experiment-mode inference in this bridge.
+
+In addition to the existing telemetry types, the compiled bridge supports
+PoseStamped, TwistStamped, Path, MAVROS State/ExtendedState and ROS Clock.
+Measurement pose and local-position estimate remain distinct topics. The
+station visualizer derives rotor animation and bounded history; this bridge
+does not calculate them or turn missing telemetry into predicted state.
+
+Run `test/observation_containers_test.py --binary <bridge_node> --image <ROS image>
+--result <result.json>` for two isolated container ROS masters. It checks the
+explicit observation uplink, clock downlink, original timestamps and omission
+of a private robot topic. Containers and the private test network are cleaned
+up; evidence logs remain at the path in the result.

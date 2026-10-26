@@ -43,11 +43,29 @@
 #define MSG_TYPE5 "std_msgs/UInt32"
 #define MSG_CLASS5 std_msgs::UInt32
 
-// ......
+#include <geometry_msgs/PoseStamped.h>
+#define MSG_TYPE6 "geometry_msgs/PoseStamped"
+#define MSG_CLASS6 geometry_msgs::PoseStamped
 
-// #include <xxx/yy.h>
-// #define MSG_TYPE10 "xxx/yy"
-// #define MSG_CLASS10 xxx::yy
+#include <geometry_msgs/TwistStamped.h>
+#define MSG_TYPE7 "geometry_msgs/TwistStamped"
+#define MSG_CLASS7 geometry_msgs::TwistStamped
+
+#include <nav_msgs/Path.h>
+#define MSG_TYPE8 "nav_msgs/Path"
+#define MSG_CLASS8 nav_msgs::Path
+
+#include <mavros_msgs/State.h>
+#define MSG_TYPE9 "mavros_msgs/State"
+#define MSG_CLASS9 mavros_msgs::State
+
+#include <mavros_msgs/ExtendedState.h>
+#define MSG_TYPE10 "mavros_msgs/ExtendedState"
+#define MSG_CLASS10 mavros_msgs::ExtendedState
+
+#include <rosgraph_msgs/Clock.h>
+#define MSG_TYPE11 "rosgraph_msgs/Clock"
+#define MSG_CLASS11 rosgraph_msgs::Clock
 
 # define SUB_MAX 50 // max number of subscriber callbacks
 
@@ -134,6 +152,10 @@ ros::Subscriber topic_subscriber(std::string topic_name, std::string msg_type, r
   #ifdef MSG_TYPE10
     if (msg_type == MSG_TYPE10)
         return nh_sub<MSG_CLASS10>(topic_name, nh, i);
+  #endif
+  #ifdef MSG_TYPE11
+    if (msg_type == MSG_TYPE11)
+        return nh_sub<MSG_CLASS11>(topic_name, nh, i);
   #endif  
     ROS_FATAL("Invalid ROS msg_type \"%s\" in configuration!", msg_type.c_str());
     exit(1);
@@ -187,6 +209,10 @@ ros::Publisher topic_publisher(std::string topic_name, std::string msg_type, ros
     if (msg_type == MSG_TYPE10)
         return nh.advertise<MSG_CLASS10>(topic_name, 1, connected, disconnected);
   #endif
+  #ifdef MSG_TYPE11
+    if (msg_type == MSG_TYPE11)
+        return nh.advertise<MSG_CLASS11>(topic_name, 1, connected, disconnected);
+  #endif
     ROS_FATAL("Invalid ROS msg_type \"%s\" in configuration!", msg_type.c_str());
     exit(1);
 }
@@ -232,6 +258,10 @@ void deserialize_publish(uint8_t* buffer_ptr, size_t msg_size, std::string msg_t
   #ifdef MSG_TYPE10
     if (msg_type == MSG_TYPE10)
         return deserialize_pub<MSG_CLASS10>(buffer_ptr, msg_size, i);
+  #endif
+  #ifdef MSG_TYPE11
+    if (msg_type == MSG_TYPE11)
+        return deserialize_pub<MSG_CLASS11>(buffer_ptr, msg_size, i);
   #endif
     ROS_FATAL("Invalid ROS msg_type \"%s\" in configuration!", msg_type.c_str());
     exit(1);
