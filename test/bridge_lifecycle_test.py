@@ -142,7 +142,10 @@ class BridgeLifecycleTest(unittest.TestCase):
             received.wait(0.1)
 
         subscriber.unregister()
-        self.assertTrue(received.is_set(), "bridge did not forward the test message")
+        if not received.is_set():
+            stop_process(self.bridge)
+            output = self.bridge.stdout.read().decode("utf-8", errors="replace")
+            self.fail("bridge did not forward the test message:\n" + output)
 
         returncode = stop_process(self.bridge)
         type(self).bridge = None
